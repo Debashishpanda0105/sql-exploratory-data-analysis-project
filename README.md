@@ -614,7 +614,19 @@ Through this project, I gained hands-on experience in:
 # 🚀 Future Enhancements
 
 - Power BI Dashboard Integration
-
+```text
+Reporting
+          ↓
+   REPORTING VIEWS
+          ↓
+ ┌────────┼─────────┐
+ ↓        ↓         ↓
+Customer Product   Sales
+Report   Report    Report
+ └────────┼─────────┘
+          ↓
+       Power BI
+```     
 ---
 
 # 📄 License
