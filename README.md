@@ -56,13 +56,21 @@ This project uses the **Gold Layer** from the SQL Data Warehouse Project.
 sql-exploratory-data-analysis-project
 │
 ├── SQL Scripts/
+│
 │   ├── 01_database_exploration.sql
 │   ├── 02_dimension_exploration.sql
 │   ├── 03_date_exploration.sql
 │   ├── 04_measure_exploration.sql
 │   ├── 05_magnitude_analysis.sql
 │   ├── 06_ranking_analysis.sql
-│   └── 07_business_questions.sql
+│   ├── 07_business_questions.sql
+│
+│   ├── 08_change_over_time_analysis.sql
+│   ├── 09_cumulative_analysis.sql
+│   ├── 10_performance_analysis.sql
+│   ├── 11_part_to_whole_analysis.sql
+│   ├── 12_data_segmentation.sql
+│   └── 13_reporting.sql
 │
 ├── Documentation/
 │   ├── Business_Requirements.md
@@ -86,9 +94,9 @@ sql-exploratory-data-analysis-project
 
 ## 1️⃣ Database Exploration
 
-Explore the overall database structure.
+Explore the overall structure and metadata of the Gold Layer.
 
-Topics Covered
+### Topics Covered
 
 - Database Information
 - Schemas
@@ -96,95 +104,126 @@ Topics Covered
 - Columns
 - Row Counts
 - Metadata
+- Table Relationships
 
 ---
 
 ## 2️⃣ Dimension Exploration
 
-Analyze descriptive business entities.
+Analyze the descriptive business entities available in the data warehouse.
 
-### Customer Analysis
+### 👥 Customer Analysis
 
 - Countries
 - Gender
 - Marital Status
+- Customer Distribution
 
-### Product Analysis
+### 📦 Product Analysis
 
-- Categories
+- Product Categories
 - Sub Categories
 - Product Lines
+- Product Distribution
 
 ---
 
 ## 3️⃣ Date Exploration
 
-Analyze business performance across time.
+Analyze the available sales timeline and customer age information.
 
-Topics Covered
+### Topics Covered
 
 - First Order Date
 - Last Order Date
 - Sales Duration
-- Monthly Sales
-- Quarterly Sales
-- Yearly Sales
+- Available Sales Years
+- Oldest Customer
+- Youngest Customer
+- Customer Age Analysis
 
 ---
 
 ## 4️⃣ Measure Exploration
 
-Generate key business KPIs.
+Generate key business metrics and KPIs.
 
-Examples
+### Key Measures
 
 - Total Sales
 - Total Orders
 - Total Customers
 - Total Products
-- Average Sales
+- Total Quantity Sold
+- Average Selling Price
 - Average Order Value
-- Average Quantity
+- Average Quantity per Order
 - Minimum Sales
 - Maximum Sales
+- Minimum Order Value
+- Maximum Order Value
+
+### Business KPI Report
+
+A consolidated KPI report is created to provide a quick overview of overall business performance.
 
 ---
 
 ## 5️⃣ Magnitude Analysis
 
-Measure business performance across dimensions.
+Measure business performance across different dimensions.
 
-Examples
+### Analysis Examples
 
-- Sales by Country
-- Sales by Category
-- Sales by Product Line
+- Customers by Country
+- Customers by Gender
+- Products by Category
+- Average Product Cost by Category
+- Revenue by Country
+- Revenue by Category
+- Revenue by Product
+- Revenue by Customer
+- Quantity Sold by Country
 - Sales by Gender
 - Sales by Marital Status
-- Sales by Year
+
+### Objective
+
+Understand the magnitude and distribution of business performance across customers, products, and geographical dimensions.
 
 ---
 
 ## 6️⃣ Ranking Analysis
 
-Identify top and bottom performers.
+Identify the highest and lowest performing business entities.
 
-Examples
+### Analysis Examples
 
-- Top Customers
-- Top Products
-- Top Categories
-- Top Countries
-- Highest Revenue Products
-- Lowest Revenue Products
+- Top 5 Products by Revenue
+- Bottom 5 Products by Revenue
+- Top 10 Customers by Revenue
+- Customers with the Fewest Orders
+- Top Categories by Revenue
+- Top Countries by Sales
+- Best Performing Products
+- Worst Performing Products
+
+### SQL Techniques
+
+- `TOP`
+- `ORDER BY`
+- `ROW_NUMBER()`
+- `RANK()`
+- `DENSE_RANK()`
+- Window Functions
 
 ---
 
 ## 7️⃣ Business Questions
 
-Answer real-world business questions using SQL.
+Answer real-world business questions using analytical SQL.
 
-Examples
+### Examples
 
 - Which customers generate the highest revenue?
 - Which products sell the most?
@@ -194,21 +233,276 @@ Examples
 - Which year generated the highest revenue?
 - Which customers purchased only once?
 - Which products are underperforming?
+- Which customers should be targeted for retention?
+- Which products require business attention?
+
+---
+
+# 📈 Phase 2 — Advanced Analytics
+
+The second phase extends the basic EDA into advanced analytical techniques used in real-world business analytics.
+
+---
+
+## 8️⃣ Change-Over-Time Analysis
+
+Analyze how business metrics change across different time periods.
+
+### Analysis Examples
+
+- Yearly Sales Trends
+- Monthly Sales Trends
+- Quarterly Sales Trends
+- Revenue Growth
+- Year-over-Year (YoY) Analysis
+- Customer Growth Over Time
+- Quantity Trends
+- Order Trends
+- Average Sales Trends
+
+### Business Questions
+
+- How are sales changing year over year?
+- Which year generated the highest revenue?
+- Which months show the highest sales?
+- Is the business growing or declining?
+- How does customer activity change over time?
+- Are order volumes increasing or decreasing?
+
+### SQL Techniques
+
+- `YEAR()`
+- `MONTH()`
+- `DATENAME()`
+- `DATEPART()`
+- `LAG()`
+- `LEAD()`
+- Window Functions
+
+---
+
+## 9️⃣ Cumulative Analysis
+
+Analyze cumulative business performance over time.
+
+### Analysis Examples
+
+- Running Total of Sales
+- Cumulative Revenue
+- Cumulative Quantity
+- Cumulative Orders
+- Year-to-Date Performance
+- Running Customer Count
+
+### Business Questions
+
+- How does revenue accumulate over time?
+- How much revenue has been generated up to a specific period?
+- Which period contributed most to cumulative revenue?
+- How quickly is the business reaching its annual revenue targets?
+
+### SQL Techniques
+
+- Window Functions
+- `SUM() OVER()`
+- `PARTITION BY`
+- `ORDER BY`
+
+---
+
+## 🔟 Performance Analysis
+
+Evaluate business performance by comparing current results with previous periods or benchmarks.
+
+### Analysis Examples
+
+- Current Year vs Previous Year
+- Current Month vs Previous Month
+- Product Performance
+- Customer Performance
+- Category Performance
+- Revenue Growth
+- Performance Comparison
+- Year-over-Year Performance
+- Month-over-Month Performance
+
+### Business Questions
+
+- Which products improved their performance?
+- Which products declined?
+- Which customers are increasing their purchases?
+- Which categories are performing above or below expectations?
+- Which products require management attention?
+- Which business areas are showing positive growth?
+
+### SQL Techniques
+
+- `LAG()`
+- `LEAD()`
+- `CASE WHEN`
+- Window Functions
+- Percentage Change Calculations
+
+---
+
+## 1️⃣1️⃣ Part-to-Whole Analysis
+
+Understand how individual business entities contribute to the overall business.
+
+### Analysis Examples
+
+- Category Contribution to Total Revenue
+- Product Contribution to Total Revenue
+- Country Contribution to Total Sales
+- Customer Contribution to Total Revenue
+- Percentage of Sales by Category
+- Percentage of Revenue by Product
+
+### Business Questions
+
+- Which category contributes the most to total revenue?
+- What percentage of revenue comes from the top products?
+- Which country contributes the largest share of sales?
+- How much revenue is generated by the top customers?
+- Which products have the largest contribution to overall sales?
+
+### SQL Techniques
+
+- Aggregate Functions
+- Window Functions
+- `SUM() OVER()`
+- Percentage Calculations
+- Common Table Expressions (CTEs)
+
+---
+
+## 1️⃣2️⃣ Data Segmentation
+
+Segment customers and products into meaningful business groups.
+
+### 👥 Customer Segmentation
+
+Customers can be classified based on:
+
+- Revenue
+- Purchase Frequency
+- Number of Orders
+- Quantity Purchased
+- Customer Activity
+- Spending Behavior
+
+### Example Customer Segments
+
+| Segment | Description |
+|---|---|
+| High Value Customers | Customers generating high revenue |
+| Medium Value Customers | Customers generating moderate revenue |
+| Low Value Customers | Customers generating relatively low revenue |
+
+### 📦 Product Segmentation
+
+Products can be classified based on:
+
+- Revenue
+- Sales Volume
+- Quantity Sold
+- Product Cost
+- Product Category
+- Product Performance
+
+### Example Product Segments
+
+| Segment | Description |
+|---|---|
+| High Performers | Products generating high revenue |
+| Mid Performers | Products generating moderate revenue |
+| Low Performers | Products generating low revenue |
+
+### Business Questions
+
+- Who are our high-value customers?
+- Which customers generate the majority of revenue?
+- Which products are high performers?
+- Which products are underperforming?
+- Which customer segments should receive targeted marketing?
+- Which products require promotional strategies?
+
+### SQL Techniques
+
+- `CASE WHEN`
+- Aggregations
+- CTEs
+- Window Functions
+- Revenue-Based Segmentation
+
+---
+
+## 1️⃣3️⃣ Reporting
+
+The final stage converts analytical findings into business-oriented reporting.
+
+### 📊 Reporting Includes
+
+- Executive KPIs
+- Sales Summary
+- Customer Summary
+- Product Summary
+- Revenue Trends
+- Top Performers
+- Bottom Performers
+- Customer Segments
+- Product Segments
+- Business Trends
+- Key Business Findings
+
+### Example Executive Metrics
+
+- Total Revenue
+- Total Orders
+- Total Customers
+- Total Products
+- Total Quantity Sold
+- Average Order Value
+- Top Revenue Product
+- Top Revenue Customer
+- Best Performing Category
+- Best Performing Country
+
+### Reporting Objective
+
+The goal is to transform SQL analysis into **clear, concise, and actionable business insights** that can support data-driven decision-making.
 
 ---
 
 # 🛠️ Technologies Used
 
-- Microsoft SQL Server
-- SQL Server Management Studio (SSMS)
-- SQL
-- Aggregate Functions
-- Joins
-- Common Table Expressions (CTEs)
-- Window Functions
-- Ranking Functions
-- Date Functions
-- CASE Statements
+--Fundamentals
+SELECT
+WHERE
+DISTINCT
+ORDER BY
+GROUP BY
+HAVING
+--Joins
+INNER JOIN
+LEFT JOIN
+--Aggregation
+SUM
+COUNT
+AVG
+MIN
+MAX
+--Conditional Logic
+CASE WHEN
+COALESCE
+--Date Analysis
+MIN / MAX Date
+DATEDIFF
+DATEPART
+YEAR
+MONTH
+Date grouping
+
 
 ---
 
@@ -227,6 +521,16 @@ Examples
 - Window Functions
 - Ranking Functions
 - Date Functions
+--Advanced SQL
+-Common Table Expressions (CTEs)
+-Subqueries
+-Window Functions
+-ROW_NUMBER
+-RANK
+-DENSE_RANK
+-Running Totals
+-Partitioning
+-Percentage Calculations
 
 ---
 
@@ -310,12 +614,6 @@ Through this project, I gained hands-on experience in:
 
 # 🚀 Future Enhancements
 
-- Customer Segmentation
-- RFM Analysis
-- Cohort Analysis
-- Customer Lifetime Value (CLV)
-- Sales Forecasting
-- Time Series Analysis
 - Power BI Dashboard Integration
 
 ---
