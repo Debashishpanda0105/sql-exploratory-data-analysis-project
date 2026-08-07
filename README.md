@@ -594,7 +594,39 @@ Business Insights
 ```
 
 ---
+## 📊 Reporting Architecture
 
+```text
+                 GOLD LAYER
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+    FACT SALES   CUSTOMERS     PRODUCTS
+        │            │            │
+        └────────────┼────────────┘
+                     │
+                     ▼
+              SQL TRANSFORMATION
+                     │
+                     ▼
+              REPORTING VIEWS
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+   CUSTOMER       PRODUCT       SALES
+     REPORT        REPORT       REPORT
+        │            │            │
+        └────────────┼────────────┘
+                     │
+                     ▼
+                  POWER BI
+                     │
+                     ▼
+              EXECUTIVE REPORT
+```
+---
 # 🎯 Learning Outcomes
 
 Through this project, I gained hands-on experience in:
