@@ -566,31 +566,59 @@ This project helps answer questions such as:
 # 🔄 Project Workflow
 
 ```text
-Gold Layer
-      │
-      ▼
-Database Exploration
-      │
-      ▼
-Dimension Exploration
-      │
-      ▼
-Date Exploration
-      │
-      ▼
-Measure Exploration
-      │
-      ▼
-Magnitude Analysis
-      │
-      ▼
-Ranking Analysis
-      │
-      ▼
-Business Questions
-      │
-      ▼
-Business Insights
+                         GOLD LAYER
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+        fact_sales     dim_customers   dim_products
+              │              │              │
+              └──────────────┼──────────────┘
+                             │
+                             ▼
+                    SQL ANALYTICAL LAYER
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │       SQL EDA         │
+                 └───────────────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+   Exploration           Analysis            Business
+        │                    │                 Questions
+        ▼                    ▼                    │
+ Database              Advanced EDA              │
+ Dimension             ┌──────────────┐           │
+ Date                  │ Change Over  │           │
+ Measure               │ Time         │           │
+ Magnitude             │ Cumulative   │           │
+ Ranking               │ Performance  │           │
+                       │ Part-to-Whole│           │
+                       │ Segmentation │           │
+                       └──────────────┘           │
+        │                    │                    │
+        └────────────────────┼────────────────────┘
+                             │
+                             ▼
+                    REPORTING LAYER
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+       report_customers report_products report_sales
+              │              │              │
+              └──────────────┼──────────────┘
+                             │
+                             ▼
+                      POWER BI / TABLEAU
+                             │
+                             ▼
+                    BUSINESS DASHBOARDS
+                             │
+                             ▼
+                    ACTIONABLE INSIGHTS
 ```
 
 ---
