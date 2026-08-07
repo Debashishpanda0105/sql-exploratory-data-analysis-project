@@ -1,6 +1,6 @@
-# 📊 SQL Exploratory Data Analysis Project
+# 📊 SQL Exploratory Data Analysis Project & Business Insights Project
 
-Welcome to the **SQL Exploratory Data Analysis (EDA) Project**! 🚀
+Welcome to the **SQL Exploratory Data Analysis (EDA) & Business Insights Project**! 🚀
 
 This project demonstrates how SQL can be used to explore, analyze, and generate business insights from a modern Data Warehouse. Using the curated **Gold Layer** of a SQL Server Data Warehouse, this project answers real-world business questions through exploratory data analysis and analytical SQL queries.
 
