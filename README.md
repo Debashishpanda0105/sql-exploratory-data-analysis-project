@@ -14,9 +14,9 @@ Unlike traditional dashboards, this project focuses on extracting insights direc
 
 ---
 
-# 🔗 Related Project
+🔗 **SQL Data Warehouse Project**
 
-This project uses the **Gold Layer** created in my SQL Data Warehouse Project.
+[View SQL Data Warehouse Project](https://github.com/Debashishpanda0105/sql-datawarehouse-project)
 
 ➡️ **SQL Data Warehouse Project**
 > https://github.com/Debashishpanda0105/sql-data-warehouse-project
@@ -475,34 +475,38 @@ The goal is to transform SQL analysis into **clear, concise, and actionable busi
 
 # 🛠️ Technologies Used
 
---Fundamentals
-SELECT
-WHERE
-DISTINCT
-ORDER BY
-GROUP BY
-HAVING
---Joins
-INNER JOIN
-LEFT JOIN
---Aggregation
-SUM
-COUNT
-AVG
-MIN
-MAX
---Conditional Logic
-CASE WHEN
-COALESCE
---Date Analysis
-MIN / MAX Date
-DATEDIFF
-DATEPART
-YEAR
-MONTH
-Date grouping
+### Database & BI
 
+- Microsoft SQL Server
+- SQL Server Management Studio (SSMS)
+- Power BI *(planned downstream integration)*
 
+### SQL & Analytics
+
+- SQL
+- Aggregate Functions
+- Joins
+- CTEs
+- Subqueries
+- CASE Statements
+- Window Functions
+- Ranking Functions
+- Date Functions
+- Running Totals
+- Percentage Calculations
+
+### Data Analytics Concepts
+
+- Exploratory Data Analysis (EDA)
+- KPI Analysis
+- Trend Analysis
+- Magnitude Analysis
+- Ranking Analysis
+- Performance Analysis
+- Part-to-Whole Analysis
+- Customer Segmentation
+- Product Segmentation
+- Business Reporting
 ---
 
 # 📈 SQL Concepts Covered
@@ -673,20 +677,16 @@ Through this project, I gained hands-on experience in:
 
 # 🚀 Future Enhancements
 
-- Power BI Dashboard Integration
-```text
-Reporting
-          ↓
-   REPORTING VIEWS
-          ↓
- ┌────────┼─────────┐
- ↓        ↓         ↓
-Customer Product   Sales
-Report   Report    Report
- └────────┼─────────┘
-          ↓
-       Power BI
-```     
+- Build Power BI dashboards using the reporting views
+- Create executive sales dashboard
+- Create customer analytics dashboard
+- Create product performance dashboard
+- Add interactive KPI analysis
+- Implement business-driven filtering and drill-downs
+- Add advanced customer segmentation
+- Add RFM analysis
+- Add Customer Lifetime Value (CLV)
+- Add sales forecasting  
 ---
 
 # 📄 License
