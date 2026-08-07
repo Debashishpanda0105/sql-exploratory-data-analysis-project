@@ -19,8 +19,7 @@ Unlike traditional dashboards, this project focuses on extracting insights direc
 This project uses the **Gold Layer** created in my SQL Data Warehouse Project.
 
 ➡️ **SQL Data Warehouse Project**
-> https://github.com/Debashishpanda0105/sql-datawarehouse-project
-
+> https://github.com/Debashishpanda0105/sql-data-warehouse-project
 ---
 
 # 🎯 Project Objectives
