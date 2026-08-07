@@ -1,597 +1,239 @@
 /*
 ===============================================================================
-Customer & Product Reporting
+13_reporting.sql
+SQL Exploratory Data Analysis Project
+Reporting Layer
 ===============================================================================
 
 Purpose:
-    This script creates business-oriented analytical reports from the Gold Layer.
+    Create reusable, business-ready SQL views for reporting and BI.
 
-Reports Included:
-    1. Executive KPI Summary
-    2. Customer Report
-    3. Product Report
-    4. Category Performance Report
-    5. Yearly Sales Summary
-    6. Top Customers
-    7. Top Products
-    8. Customer Segmentation Summary
+The reporting layer transforms the Gold Layer into analytical views
+that can be consumed by:
+
+    - SQL Analysts
+    - Business Analysts
+    - Power BI
+    - Tableau
+    - Management Reports
 
 Data Sources:
-    - gold.fact_sales
-    - gold.dim_customers
-    - gold.dim_products
+    gold.fact_sales
+    gold.dim_customers
+    gold.dim_products
 
-Author:
-    Debashish Panda
+Reporting Views:
+    1. gold.report_customers
+    2. gold.report_products
+    3. gold.report_sales
 
-Tool:
-    SQL Server / SSMS
 ===============================================================================
 */
 
 
 /*
 ===============================================================================
-1. EXECUTIVE KPI SUMMARY
+1. CUSTOMER REPORT
 ===============================================================================
+
 Purpose:
-    Provide a high-level snapshot of the overall business.
+    Consolidate customer demographics, purchasing behavior,
+    KPIs, segmentation and activity status.
+
 ===============================================================================
 */
 
-SELECT
-    'Total Sales' AS measure_name,
-    SUM(sales_amount) AS measure_value
-FROM gold.fact_sales
+CREATE OR ALTER VIEW gold.report_customers
+AS
 
-UNION ALL
-
-SELECT
-    'Total Orders',
-    COUNT(DISTINCT order_name)
-FROM gold.fact_sales
-
-UNION ALL
-
-SELECT
-    'Total Customers',
-    COUNT(DISTINCT customer_key)
-FROM gold.dim_customers
-
-UNION ALL
-
-SELECT
-    'Active Customers',
-    COUNT(DISTINCT customer_key)
-FROM gold.fact_sales
-
-UNION ALL
-
-SELECT
-    'Total Products',
-    COUNT(DISTINCT product_key)
-FROM gold.dim_products
-
-UNION ALL
-
-SELECT
-    'Total Quantity Sold',
-    SUM(quantity)
-FROM gold.fact_sales
-
-UNION ALL
-
-SELECT
-    'Average Selling Price',
-    AVG(price)
-FROM gold.fact_sales
-
-UNION ALL
-
-SELECT
-    'Average Order Value',
-    SUM(sales_amount) /
-        NULLIF(COUNT(DISTINCT order_name), 0)
-FROM gold.fact_sales;
-
-
-/*
-===============================================================================
-2. CUSTOMER REPORT
-===============================================================================
-Purpose:
-    Consolidate customer-level metrics into a single analytical report.
-
-Metrics:
-    - Customer information
-    - Total orders
-    - Total sales
-    - Total quantity
-    - Total products purchased
-    - First order date
-    - Last order date
-    - Customer lifespan
-    - Recency
-    - Average order value
-===============================================================================
-*/
-
-WITH customer_metrics AS
+WITH customer_base AS
 (
     SELECT
+
+        /* Customer Information */
         c.customer_key,
         c.first_name,
         c.last_name,
-        c.gender,
+        CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
         c.country,
+        c.gender,
+        c.marital_status,
         c.birthdate,
+        c.create_date,
 
-        COUNT(DISTINCT f.order_name) AS total_orders,
-
-        SUM(f.sales_amount) AS total_sales,
-
-        SUM(f.quantity) AS total_quantity,
-
-        COUNT(DISTINCT f.product_key) AS total_products,
-
+        /* Purchase Timeline */
         MIN(f.order_date) AS first_order_date,
+        MAX(f.order_date) AS last_order_date,
 
-        MAX(f.order_date) AS last_order_date
+        /* Customer Metrics */
+        COUNT(DISTINCT f.order_name) AS total_orders,
+        SUM(f.sales_amount) AS total_sales,
+        SUM(f.quantity) AS total_quantity,
+        COUNT(DISTINCT f.product_key) AS total_products
 
-    FROM gold.dim_customers c
+    FROM gold.dim_customers AS c
 
-    LEFT JOIN gold.fact_sales f
+    LEFT JOIN gold.fact_sales AS f
         ON c.customer_key = f.customer_key
 
     GROUP BY
+
         c.customer_key,
         c.first_name,
         c.last_name,
-        c.gender,
         c.country,
-        c.birthdate
+        c.gender,
+        c.marital_status,
+        c.birthdate,
+        c.create_date
+),
+
+customer_metrics AS
+(
+    SELECT
+
+        *,
+
+        /* Customer Age */
+        CASE
+            WHEN birthdate IS NULL THEN NULL
+
+            ELSE
+                DATEDIFF(YEAR, birthdate, GETDATE())
+                -
+                CASE
+                    WHEN DATEADD(
+                            YEAR,
+                            DATEDIFF(YEAR, birthdate, GETDATE()),
+                            birthdate
+                         ) > GETDATE()
+                    THEN 1
+                    ELSE 0
+                END
+        END AS age,
+
+        /* Customer Lifespan */
+        CASE
+            WHEN first_order_date IS NULL
+                THEN 0
+            ELSE
+                DATEDIFF(
+                    MONTH,
+                    first_order_date,
+                    last_order_date
+                )
+        END AS lifespan_months,
+
+        /* Recency */
+        CASE
+            WHEN last_order_date IS NULL
+                THEN NULL
+            ELSE
+                DATEDIFF(
+                    MONTH,
+                    last_order_date,
+                    GETDATE()
+                )
+        END AS recency_months,
+
+        /* Average Order Value */
+        CASE
+            WHEN total_orders = 0
+                THEN 0
+            ELSE
+                CAST(total_sales AS DECIMAL(18,2))
+                / total_orders
+        END AS average_order_value,
+
+        /* Average Monthly Spend */
+        CASE
+            WHEN first_order_date IS NULL
+                THEN 0
+
+            WHEN DATEDIFF(
+                    MONTH,
+                    first_order_date,
+                    last_order_date
+                 ) = 0
+                THEN CAST(total_sales AS DECIMAL(18,2))
+
+            ELSE
+                CAST(total_sales AS DECIMAL(18,2))
+                /
+                DATEDIFF(
+                    MONTH,
+                    first_order_date,
+                    last_order_date
+                )
+        END AS average_monthly_spend
+
+    FROM customer_base
 )
 
 SELECT
+
+    /*==========================================================
+      Customer Attributes
+    ==========================================================*/
+
     customer_key,
     first_name,
     last_name,
-    gender,
+    customer_name,
     country,
+    gender,
+    marital_status,
+
+    /*==========================================================
+      Customer Demographics
+    ==========================================================*/
+
     birthdate,
+    age,
+    create_date,
+
+    /*==========================================================
+      Purchase Timeline
+    ==========================================================*/
+
+    first_order_date,
+    last_order_date,
+    lifespan_months,
+    recency_months,
+
+    /*==========================================================
+      Customer KPIs
+    ==========================================================*/
 
     total_orders,
     total_sales,
     total_quantity,
     total_products,
-
-    first_order_date,
-    last_order_date,
-
-    DATEDIFF(
-        MONTH,
-        first_order_date,
-        last_order_date
-    ) AS customer_lifespan_months,
-
-    DATEDIFF(
-        MONTH,
-        last_order_date,
-        (SELECT MAX(order_date) FROM gold.fact_sales)
-    ) AS recency_months,
-
-    total_sales /
-        NULLIF(total_orders, 0) AS average_order_value
-
-FROM customer_metrics
-ORDER BY total_sales DESC;
-
-
-/*
-===============================================================================
-3. PRODUCT REPORT
-===============================================================================
-Purpose:
-    Analyze product-level performance.
-
-Metrics:
-    - Product information
-    - Category
-    - Sub-category
-    - Total orders
-    - Total quantity sold
-    - Total revenue
-    - Average selling price
-    - First sale date
-    - Last sale date
-===============================================================================
-*/
-
-SELECT
-    p.product_key,
-    p.product_name,
-    p.category,
-    p.sub_category,
-    p.cost,
-
-    COUNT(DISTINCT f.order_name) AS total_orders,
-
-    SUM(f.quantity) AS total_quantity_sold,
-
-    SUM(f.sales_amount) AS total_revenue,
-
-    AVG(f.price) AS average_selling_price,
-
-    MIN(f.order_date) AS first_sale_date,
-
-    MAX(f.order_date) AS last_sale_date
-
-FROM gold.dim_products p
-
-LEFT JOIN gold.fact_sales f
-    ON p.product_key = f.product_key
-
-GROUP BY
-    p.product_key,
-    p.product_name,
-    p.category,
-    p.sub_category,
-    p.cost
-
-ORDER BY total_revenue DESC;
-
-
-/*
-===============================================================================
-4. CATEGORY PERFORMANCE REPORT
-===============================================================================
-Purpose:
-    Compare revenue and sales volume across product categories.
-===============================================================================
-*/
-
-SELECT
-    p.category,
-
-    COUNT(DISTINCT p.product_key) AS total_products,
-
-    COUNT(DISTINCT f.order_name) AS total_orders,
-
-    SUM(f.quantity) AS total_quantity_sold,
-
-    SUM(f.sales_amount) AS total_revenue,
-
-    AVG(f.price) AS average_selling_price,
-
-    AVG(p.cost) AS average_product_cost
-
-FROM gold.dim_products p
-
-LEFT JOIN gold.fact_sales f
-    ON p.product_key = f.product_key
-
-GROUP BY
-    p.category
-
-ORDER BY total_revenue DESC;
-
-
-/*
-===============================================================================
-5. YEARLY SALES SUMMARY
-===============================================================================
-Purpose:
-    Provide a year-level business performance report.
-===============================================================================
-*/
-
-SELECT
-    YEAR(order_date) AS order_year,
-
-    COUNT(DISTINCT order_name) AS total_orders,
-
-    COUNT(DISTINCT customer_key) AS total_customers,
-
-    SUM(quantity) AS total_quantity,
-
-    SUM(sales_amount) AS total_sales,
-
-    AVG(sales_amount) AS average_sales_per_transaction,
-
-    SUM(sales_amount) /
-        NULLIF(COUNT(DISTINCT order_name), 0)
-        AS average_order_value
-
-FROM gold.fact_sales
-
-WHERE order_date IS NOT NULL
-
-GROUP BY
-    YEAR(order_date)
-
-ORDER BY
-    order_year;
-
-
-/*
-===============================================================================
-6. TOP 10 CUSTOMERS REPORT
-===============================================================================
-Purpose:
-    Identify the highest-value customers based on revenue.
-===============================================================================
-*/
-
-SELECT TOP 10
-
-    c.customer_key,
-
-    CONCAT(
-        c.first_name,
-        ' ',
-        c.last_name
-    ) AS customer_name,
-
-    c.country,
-
-    COUNT(DISTINCT f.order_name) AS total_orders,
-
-    SUM(f.quantity) AS total_quantity,
-
-    SUM(f.sales_amount) AS total_revenue
-
-FROM gold.dim_customers c
-
-INNER JOIN gold.fact_sales f
-    ON c.customer_key = f.customer_key
-
-GROUP BY
-    c.customer_key,
-    c.first_name,
-    c.last_name,
-    c.country
-
-ORDER BY
-    total_revenue DESC;
-
-
-/*
-===============================================================================
-7. TOP 10 PRODUCTS REPORT
-===============================================================================
-Purpose:
-    Identify products generating the highest revenue.
-===============================================================================
-*/
-
-SELECT TOP 10
-
-    p.product_key,
-
-    p.product_name,
-
-    p.category,
-
-    p.sub_category,
-
-    SUM(f.quantity) AS total_quantity_sold,
-
-    COUNT(DISTINCT f.order_name) AS total_orders,
-
-    SUM(f.sales_amount) AS total_revenue
-
-FROM gold.dim_products p
-
-INNER JOIN gold.fact_sales f
-    ON p.product_key = f.product_key
-
-GROUP BY
-    p.product_key,
-    p.product_name,
-    p.category,
-    p.sub_category
-
-ORDER BY
-    total_revenue DESC;
-
-
-/*
-===============================================================================
-8. CUSTOMER SEGMENTATION REPORT
-===============================================================================
-Purpose:
-    Segment customers based on their total revenue contribution.
-
-Segments:
-    - High Value
-    - Medium Value
-    - Low Value
-===============================================================================
-*/
-
-WITH customer_sales AS
-(
-    SELECT
-
-        c.customer_key,
-
-        CONCAT(
-            c.first_name,
-            ' ',
-            c.last_name
-        ) AS customer_name,
-
-        SUM(f.sales_amount) AS total_revenue,
-
-        COUNT(DISTINCT f.order_name) AS total_orders,
-
-        SUM(f.quantity) AS total_quantity
-
-    FROM gold.dim_customers c
-
-    INNER JOIN gold.fact_sales f
-        ON c.customer_key = f.customer_key
-
-    GROUP BY
-        c.customer_key,
-        c.first_name,
-        c.last_name
-)
-
-SELECT
-
-    customer_key,
-
-    customer_name,
-
-    total_revenue,
-
-    total_orders,
-
-    total_quantity,
+    average_order_value,
+    average_monthly_spend,
+
+    /*==========================================================
+      Customer Segmentation
+    ==========================================================*/
 
     CASE
 
-        WHEN total_revenue >= 5000
-            THEN 'High Value Customer'
+        WHEN total_sales >= 10000
+            THEN 'High Value'
 
-        WHEN total_revenue >= 2000
-            THEN 'Medium Value Customer'
+        WHEN total_sales >= 5000
+            THEN 'Medium Value'
 
-        ELSE 'Low Value Customer'
+        WHEN total_sales > 0
+            THEN 'Low Value'
 
-    END AS customer_segment
+        ELSE 'No Purchase'
 
-FROM customer_sales
+    END AS customer_segment,
 
-ORDER BY
-    total_revenue DESC;
-
-
-/*
-===============================================================================
-9. CUSTOMER SEGMENT SUMMARY
-===============================================================================
-Purpose:
-    Understand how customers are distributed across value segments.
-===============================================================================
-*/
-
-WITH customer_sales AS
-(
-    SELECT
-
-        c.customer_key,
-
-        SUM(f.sales_amount) AS total_revenue
-
-    FROM gold.dim_customers c
-
-    INNER JOIN gold.fact_sales f
-        ON c.customer_key = f.customer_key
-
-    GROUP BY
-        c.customer_key
-),
-
-customer_segments AS
-(
-    SELECT
-
-        customer_key,
-
-        total_revenue,
-
-        CASE
-
-            WHEN total_revenue >= 5000
-                THEN 'High Value'
-
-            WHEN total_revenue >= 2000
-                THEN 'Medium Value'
-
-            ELSE 'Low Value'
-
-        END AS customer_segment
-
-    FROM customer_sales
-)
-
-SELECT
-
-    customer_segment,
-
-    COUNT(customer_key) AS total_customers,
-
-    SUM(total_revenue) AS total_revenue,
-
-    AVG(total_revenue) AS average_customer_revenue
-
-FROM customer_segments
-
-GROUP BY
-    customer_segment
-
-ORDER BY
-    total_revenue DESC;
-
-
-/*
-===============================================================================
-10. CUSTOMER ACTIVITY REPORT
-===============================================================================
-Purpose:
-    Identify active and inactive customers based on their latest purchase.
-===============================================================================
-*/
-
-WITH customer_activity AS
-(
-    SELECT
-
-        c.customer_key,
-
-        CONCAT(
-            c.first_name,
-            ' ',
-            c.last_name
-        ) AS customer_name,
-
-        MAX(f.order_date) AS last_order_date,
-
-        SUM(f.sales_amount) AS total_revenue,
-
-        COUNT(DISTINCT f.order_name) AS total_orders
-
-    FROM gold.dim_customers c
-
-    LEFT JOIN gold.fact_sales f
-        ON c.customer_key = f.customer_key
-
-    GROUP BY
-        c.customer_key,
-        c.first_name,
-        c.last_name
-)
-
-SELECT
-
-    customer_key,
-
-    customer_name,
-
-    last_order_date,
-
-    total_revenue,
-
-    total_orders,
-
-    DATEDIFF(
-        MONTH,
-        last_order_date,
-        (SELECT MAX(order_date)
-         FROM gold.fact_sales)
-    ) AS inactive_months,
+    /*==========================================================
+      Customer Activity
+    ==========================================================*/
 
     CASE
 
@@ -601,16 +243,14 @@ SELECT
         WHEN DATEDIFF(
                 MONTH,
                 last_order_date,
-                (SELECT MAX(order_date)
-                FROM gold.fact_sales)
+                GETDATE()
              ) <= 6
             THEN 'Active'
 
         WHEN DATEDIFF(
                 MONTH,
                 last_order_date,
-                (SELECT MAX(order_date)
-                FROM gold.fact_sales)
+                GETDATE()
              ) <= 12
             THEN 'At Risk'
 
@@ -618,29 +258,469 @@ SELECT
 
     END AS customer_status
 
-FROM customer_activity
+FROM customer_metrics;
+GO
 
-ORDER BY
-    total_revenue DESC;
 
 
 /*
 ===============================================================================
-END OF REPORTING SCRIPT
+2. PRODUCT REPORT
 ===============================================================================
 
-Business Value:
+Purpose:
+    Consolidate product information and sales performance.
 
-This reporting layer transforms raw analytical queries into structured
-business reports that can support:
-
-    - Executive decision-making
-    - Customer analysis
+Use Cases:
     - Product performance analysis
+    - Category analysis
     - Revenue analysis
-    - Customer segmentation
-    - Retention analysis
-    - Business performance monitoring
+    - Product ranking
+    - Power BI Product Dashboard
 
 ===============================================================================
 */
+
+CREATE OR ALTER VIEW gold.report_products
+AS
+
+WITH product_base AS
+(
+    SELECT
+
+        /* Product Information */
+
+        p.product_key,
+        p.product_name,
+        p.category,
+        p.sub_category,
+        p.product_line,
+        p.cost,
+
+        /* Product Sales Metrics */
+
+        COUNT(DISTINCT f.order_name) AS total_orders,
+
+        SUM(f.sales_amount) AS total_sales,
+
+        SUM(f.quantity) AS total_quantity,
+
+        COUNT(DISTINCT f.customer_key) AS total_customers,
+
+        MIN(f.order_date) AS first_sale_date,
+
+        MAX(f.order_date) AS last_sale_date
+
+    FROM gold.dim_products AS p
+
+    LEFT JOIN gold.fact_sales AS f
+        ON p.product_key = f.product_key
+
+    GROUP BY
+
+        p.product_key,
+        p.product_name,
+        p.category,
+        p.sub_category,
+        p.product_line,
+        p.cost
+)
+
+SELECT
+
+    /* Product Information */
+
+    product_key,
+    product_name,
+    category,
+    sub_category,
+    product_line,
+    cost,
+
+    /* Sales Metrics */
+
+    total_orders,
+    total_sales,
+    total_quantity,
+    total_customers,
+
+    /* Sales Timeline */
+
+    first_sale_date,
+    last_sale_date,
+
+    /* Average Selling Price */
+
+    CASE
+        WHEN total_quantity = 0
+            THEN 0
+
+        ELSE
+            CAST(total_sales AS DECIMAL(18,2))
+            / total_quantity
+    END AS average_selling_price,
+
+    /* Revenue After Product Cost */
+
+    CASE
+        WHEN total_quantity = 0
+            THEN 0
+
+        ELSE
+            total_sales - (cost * total_quantity)
+    END AS estimated_profit,
+
+    /* Product Performance */
+
+    CASE
+
+        WHEN total_sales >= 100000
+            THEN 'High Performer'
+
+        WHEN total_sales >= 50000
+            THEN 'Medium Performer'
+
+        WHEN total_sales > 0
+            THEN 'Low Performer'
+
+        ELSE 'No Sales'
+
+    END AS product_segment,
+
+    /* Product Activity */
+
+    CASE
+
+        WHEN last_sale_date IS NULL
+            THEN 'No Sales'
+
+        WHEN DATEDIFF(
+                MONTH,
+                last_sale_date,
+                GETDATE()
+             ) <= 6
+            THEN 'Active'
+
+        ELSE 'Inactive'
+
+    END AS product_status
+
+FROM product_base;
+GO
+
+
+
+/*
+===============================================================================
+3. SALES REPORT
+===============================================================================
+
+Purpose:
+    Create a time-based reporting view for executive reporting,
+    trend analysis and Power BI dashboards.
+
+Grain:
+    One row per month.
+
+Use Cases:
+    - Monthly sales trend
+    - Customer trend
+    - Quantity trend
+    - Year-over-Year analysis
+    - Running total
+    - Power BI Executive Dashboard
+
+===============================================================================
+*/
+
+CREATE OR ALTER VIEW gold.report_sales
+AS
+
+WITH monthly_sales AS
+(
+    SELECT
+
+        DATETRUNC(MONTH, f.order_date) AS sales_month,
+
+        YEAR(f.order_date) AS sales_year,
+
+        MONTH(f.order_date) AS sales_month_number,
+
+        SUM(f.sales_amount) AS total_sales,
+
+        COUNT(DISTINCT f.order_name) AS total_orders,
+
+        COUNT(DISTINCT f.customer_key) AS total_customers,
+
+        SUM(f.quantity) AS total_quantity
+
+    FROM gold.fact_sales AS f
+
+    WHERE f.order_date IS NOT NULL
+
+    GROUP BY
+
+        DATETRUNC(MONTH, f.order_date),
+        YEAR(f.order_date),
+        MONTH(f.order_date)
+)
+
+SELECT
+
+    /* Date Information */
+
+    sales_month,
+    sales_year,
+    sales_month_number,
+
+    /* Business Metrics */
+
+    total_sales,
+    total_orders,
+    total_customers,
+    total_quantity,
+
+    /* Average Order Value */
+
+    CASE
+        WHEN total_orders = 0
+            THEN 0
+
+        ELSE
+            CAST(total_sales AS DECIMAL(18,2))
+            / total_orders
+    END AS average_order_value,
+
+    /* Average Quantity per Order */
+
+    CASE
+        WHEN total_orders = 0
+            THEN 0
+
+        ELSE
+            CAST(total_quantity AS DECIMAL(18,2))
+            / total_orders
+    END AS average_quantity_per_order,
+
+    /* Running Total */
+
+    SUM(total_sales) OVER
+    (
+        ORDER BY sales_month
+        ROWS BETWEEN UNBOUNDED PRECEDING
+        AND CURRENT ROW
+    ) AS cumulative_sales,
+
+    /* Previous Month Sales */
+
+    LAG(total_sales) OVER
+    (
+        ORDER BY sales_month
+    ) AS previous_month_sales,
+
+    /* Month-over-Month Difference */
+
+    total_sales
+    -
+    LAG(total_sales) OVER
+    (
+        ORDER BY sales_month
+    ) AS month_over_month_difference,
+
+    /* Month-over-Month Growth % */
+
+    CASE
+
+        WHEN LAG(total_sales) OVER
+        (
+            ORDER BY sales_month
+        ) IS NULL
+
+        THEN NULL
+
+        WHEN LAG(total_sales) OVER
+        (
+            ORDER BY sales_month
+        ) = 0
+
+        THEN NULL
+
+        ELSE
+
+            CAST
+            (
+                (
+                    total_sales
+                    -
+                    LAG(total_sales) OVER
+                    (
+                        ORDER BY sales_month
+                    )
+                )
+                * 100.0
+                /
+                LAG(total_sales) OVER
+                (
+                    ORDER BY sales_month
+                )
+                AS DECIMAL(18,2)
+            )
+
+    END AS month_over_month_growth
+
+FROM monthly_sales;
+GO
+
+
+
+/*
+===============================================================================
+4. REPORT VALIDATION
+===============================================================================
+
+Use these queries to validate the reporting layer.
+
+===============================================================================
+*/
+
+
+/*---------------------------------------------------------
+Customer Report
+---------------------------------------------------------*/
+
+SELECT TOP 20 *
+FROM gold.report_customers
+ORDER BY total_sales DESC;
+
+
+/*---------------------------------------------------------
+Product Report
+---------------------------------------------------------*/
+
+SELECT TOP 20 *
+FROM gold.report_products
+ORDER BY total_sales DESC;
+
+
+/*---------------------------------------------------------
+Sales Report
+---------------------------------------------------------*/
+
+SELECT *
+FROM gold.report_sales
+ORDER BY sales_month;
+
+
+
+/*
+===============================================================================
+5. BUSINESS REPORTING QUERIES
+===============================================================================
+*/
+
+
+/*---------------------------------------------------------
+Top 10 Customers
+---------------------------------------------------------*/
+
+SELECT TOP 10
+
+    customer_key,
+    customer_name,
+    country,
+    total_orders,
+    total_sales,
+    average_order_value,
+    customer_segment
+
+FROM gold.report_customers
+
+ORDER BY total_sales DESC;
+
+
+
+/*---------------------------------------------------------
+Top 10 Products
+---------------------------------------------------------*/
+
+SELECT TOP 10
+
+    product_key,
+    product_name,
+    category,
+    total_orders,
+    total_sales,
+    total_quantity,
+    estimated_profit,
+    product_segment
+
+FROM gold.report_products
+
+ORDER BY total_sales DESC;
+
+
+
+/*---------------------------------------------------------
+Customer Segment Distribution
+---------------------------------------------------------*/
+
+SELECT
+
+    customer_segment,
+
+    COUNT(*) AS total_customers,
+
+    SUM(total_sales) AS total_sales,
+
+    AVG(total_sales) AS average_customer_sales
+
+FROM gold.report_customers
+
+GROUP BY customer_segment
+
+ORDER BY total_sales DESC;
+
+
+
+/*---------------------------------------------------------
+Product Category Performance
+---------------------------------------------------------*/
+
+SELECT
+
+    category,
+
+    COUNT(*) AS total_products,
+
+    SUM(total_sales) AS total_sales,
+
+    SUM(total_quantity) AS total_quantity,
+
+    SUM(estimated_profit) AS estimated_profit
+
+FROM gold.report_products
+
+GROUP BY category
+
+ORDER BY total_sales DESC;
+
+
+
+/*---------------------------------------------------------
+Monthly Business Performance
+---------------------------------------------------------*/
+
+SELECT
+
+    sales_month,
+    total_sales,
+    total_orders,
+    total_customers,
+    total_quantity,
+    average_order_value,
+    cumulative_sales,
+    month_over_month_growth
+
+FROM gold.report_sales
+
+ORDER BY sales_month;
